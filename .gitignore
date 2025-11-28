@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Data / models (optional, if you add local files later)
+data/
+models/
+
+# Hugging Face cache inside project (if you ever put it here)
+cache/

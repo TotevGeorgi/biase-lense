@@ -1,0 +1,22 @@
+# Core dependencies
+numpy==2.3.4
+pandas==2.3.3
+scikit-learn==1.7.2
+
+# Deep learning + embeddings
+torch==2.9.0
+torchvision==0.24.0
+torchaudio==2.9.0
+sentence-transformers==5.1.2
+transformers==4.57.1
+faiss-cpu==1.12.0
+
+# UI framework
+streamlit==1.50.0
+
+# Utility + compatibility
+tqdm==4.67.1
+requests==2.32.5
+huggingface-hub==0.36.0
+protobuf==6.33.0
+typing_extensions==4.15.0
