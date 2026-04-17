@@ -2,25 +2,6 @@ from .embeddings import build_index, semantic_search
 from .summarizer import summarize
 from .classifier import analyze_emotion
 
-# TEMP dummy data
-ARTICLES = [
-    {
-        "id": 1,
-        "title": "Elections bring hope for economic reform",
-        "text": "The recent elections have sparked hope among citizens as the new government promises reforms ..."
-    },
-    {
-        "id": 2,
-        "title": "New conflict raises fears in the region",
-        "text": "Rising tensions between neighbouring countries have created fear among local populations ..."
-    },
-    {
-        "id": 3,
-        "title": "Scientists develop breakthrough cancer treatment",
-        "text": "A team of scientists announced a breakthrough therapy which could significantly improve survival rates ..."
-    },
-]
-
 
 def build_demo_index():
     return build_index(ARTICLES)

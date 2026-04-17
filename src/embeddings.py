@@ -29,7 +29,7 @@ def semantic_search(index, query: str, k: int = 3):
         normalize_embeddings=True
     )[0]
 
-    sims = index["embeddings"] @ query_emb  # cosine (because normalized)
+    sims = index["embeddings"] @ query_emb 
     top_idx = np.argsort(-sims)[:k]
 
     results = []

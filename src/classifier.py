@@ -1,73 +1,59 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+from typing import Dict, List
+import re
 
-MODEL_NAME = "j-hartmann/emotion-english-distilroberta-base"
+MODEL_NAME = "SamLowe/roberta-base-go_emotions"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+model.eval()
 id2label = model.config.id2label
 
+GOEMOTIONS_TO_BIASLENS = {
+    "happiness": {"joy","amusement","gratitude","love","admiration","relief","pride","approval","caring","excitement"},
+    "fear": {"fear","nervousness","anxiety","worry","terror"},
+    "motivation": {"optimism","hope","desire","determination","enthusiasm","inspiration","curiosity"},
+}
 
-def classify_raw(text: str) -> dict:
-    """
-    Run the pre-trained model and return probabilities for each original label.
-    Example output: {"joy": 0.72, "anger": 0.03, ...}
-    """
-    inputs = tokenizer(text, return_tensors="pt", truncation=True)
+def split_sentences(text: str) -> List[str]:
+    return [s.strip() for s in re.split(r"[.!?]\s+", text) if s.strip()]
+
+def classify_raw(text: str) -> Dict[str, float]:
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
     with torch.no_grad():
-        outputs = model(**inputs)
+        logits = model(**inputs).logits[0]
+    probs = torch.sigmoid(logits).tolist()
+    return {id2label[i].lower(): float(probs[i]) for i in range(len(probs))}
 
-    probs = torch.softmax(outputs.logits, dim=-1)[0].tolist()
-
-    result = {}
-    for i, p in enumerate(probs):
-        label = id2label[i]
-        result[label] = float(p)
-    return result
-
-
-def map_to_bias_lense_labels(emotions: dict) -> dict:
-    """
-    Map model labels to:
-    - happiness
-    - fear
-    - motivation
-
-    Returns:
-    {
-        "scores": {"happiness": ..., "fear": ..., "motivation": ...},
-        "label": "happiness"
-    }
-    """
-    # Lower-case keys for robust matching
-    lower = {k.lower(): v for k, v in emotions.items()}
-
-    # You can tweak these groupings once you see real labels
-    happiness = 0.0
-    for key in ["joy", "happiness", "love"]:
-        happiness += lower.get(key, 0.0)
-
-    fear = 0.0
-    for key in ["fear", "anxiety", "worry"]:
-        fear += lower.get(key, 0.0)
-
-    motivation = 0.0
-    for key in ["optimism", "hope", "enthusiasm"]:
-        motivation += lower.get(key, 0.0)
-
-    scores = {
-        "happiness": happiness,
-        "fear": fear,
-        "motivation": motivation,
+def map_to_bias_lense_labels(emotions: Dict[str, float]) -> Dict[str, float]:
+    def sum_labels(names):
+        return float(sum(emotions.get(name, 0.0) for name in names))
+    return {
+        "happiness": sum_labels(GOEMOTIONS_TO_BIASLENS["happiness"]),
+        "fear": sum_labels(GOEMOTIONS_TO_BIASLENS["fear"]),
+        "motivation": sum_labels(GOEMOTIONS_TO_BIASLENS["motivation"]),
     }
 
-    top_label = max(scores, key=scores.get)
-    return {"scores": scores, "label": top_label}
+def analyze_emotion(text: str, mode: str = "chunk_max") -> Dict:
+    sentences = split_sentences(text)
 
+    if len(sentences) <= 1:
+        raw = classify_raw(text)
+        scores = map_to_bias_lense_labels(raw)
+        return {"scores": scores, "label": max(scores, key=scores.get)}
 
-def analyze_emotion(text: str) -> dict:
-    """
-    Convenience function: text -> final label + scores.
-    """
-    raw = classify_raw(text)
-    return map_to_bias_lense_labels(raw)
+    per_chunk_scores = []
+    for s in sentences:
+        raw = classify_raw(s)
+        per_chunk_scores.append(map_to_bias_lense_labels(raw))
+
+    final = {"happiness": 0.0, "fear": 0.0, "motivation": 0.0}
+    if mode == "chunk_max":
+        for k in final:
+            final[k] = max(sc[k] for sc in per_chunk_scores)
+    else: 
+        for k in final:
+            final[k] = sum(sc[k] for sc in per_chunk_scores) / len(per_chunk_scores)
+
+    return {"scores": final, "label": max(final, key=final.get)}
