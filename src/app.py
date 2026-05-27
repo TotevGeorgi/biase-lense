@@ -1,6 +1,6 @@
-from .embeddings import build_index, semantic_search
-from .summarizer import summarize
-from .classifier import analyze_emotion
+from src.embeddings import build_index, semantic_search
+from src.summarizer import summarize
+from src.classifier import analyze_emotion
 
 
 def build_demo_index():
@@ -11,25 +11,30 @@ def news_emotion_agent(query: str, index):
     """
     1) Semantic search
     2) Summarize each article
-    3) Classify emotion of the summary
+    3) Analyse emotional tone of the full article text
     """
     hits = semantic_search(index, query, k=3)
     enriched = []
 
     for h in hits:
-        summary = summarize(h["text"])
-        emotion = analyze_emotion(summary)
+        text = h["text"]
+        summary = summarize(text)
+        emotion = analyze_emotion(text)
 
-        enriched.append(
-            {
-                "id": h["id"],
-                "title": h["title"],
-                "score": h["score"],
-                "summary": summary,
-                "emotion_label": emotion["label"],
-                "emotion_scores": emotion["scores"],
-            }
-        )
+        enriched.append({
+            "id": h["id"],
+            "title": h["title"],
+            "score": h["score"],
+            "summary": summary,
+
+            # New emotion fields
+            "tone_score": emotion["tone_score"],
+            "tone_label": emotion["tone_label"],
+            "intensity_score": emotion["intensity_score"],
+            "intensity_label": emotion["intensity_label"],
+            "top_emotions": emotion["top_emotions"],
+            "evidence_sentences": emotion["evidence_sentences"],
+        })
 
     return enriched
 
@@ -45,4 +50,7 @@ if __name__ == "__main__":
         print(f"Title: {r['title']}")
         print(f"Relevance score: {r['score']:.3f}")
         print(f"Summary: {r['summary']}")
-        print(f"Emotion: {r['emotion_label']}  {r['emotion_scores']}")
+        print(f"Tone: {r['tone_label']} ({r['tone_score']}/100)")
+        print(f"Intensity: {r['intensity_label']} ({r['intensity_score']}/100)")
+        print(f"Top emotions: {r['top_emotions']}")
+        print(f"Evidence: {r['evidence_sentences']}")

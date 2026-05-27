@@ -38,3 +38,17 @@ def semantic_search(index, query: str, k: int = 3):
         doc["score"] = float(sims[idx])
         results.append(doc)
     return results
+
+def calculate_text_similarity(text_a: str, text_b: str) -> float:
+
+    embeddings = emb_model.encode(
+        [text_a, text_b],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+
+    similarity = float(embeddings[0] @ embeddings[1])
+
+    similarity_percentage = max(0.0, min(1.0, similarity)) * 100
+
+    return round(similarity_percentage, 1)

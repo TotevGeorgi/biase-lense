@@ -1,39 +1,45 @@
-from typing import Dict, List
-import re
+from typing import Any, Dict
 
-from src.classifier import classify_raw, map_to_bias_lense_labels, split_sentences
 
-def explain_emotion(text: str, top_label: str, top_k_sentences: int = 3) -> str:
-    
-    sents = split_sentences(text)
-    if not sents:
-        return "Not enough text to explain the emotion."
+def explain_emotion(
+    emotion_result: Dict[str, Any],
+    top_k_sentences: int = 3,
+) -> str:
 
-    scored: List[tuple[str, float]] = []
+    tone_score = emotion_result["tone_score"]
+    tone_label = emotion_result["tone_label"]
 
-    for s in sents:
-        raw = classify_raw(s)
-        mapped = map_to_bias_lense_labels(raw)
-        scored.append((s, float(mapped.get(top_label, 0.0))))
+    intensity_score = emotion_result["intensity_score"]
+    intensity_label = emotion_result["intensity_label"]
 
-    scored.sort(key=lambda x: x[1], reverse=True)
-    top = [s for s, sc in scored[:top_k_sentences] if len(s.strip()) > 10]
+    top_emotions = emotion_result.get("top_emotions", [])
+    evidence_sentences = emotion_result.get("evidence_sentences", [])
 
-    if not top:
-        return "The emotion signal is weak or spread across the text."
+    if top_emotions:
+        emotion_names = [
+            emotion["label"]
+            for emotion in top_emotions
+        ]
+        emotion_text = ", ".join(emotion_names)
+    else:
+        emotion_text = "no strong emotional signals"
 
-    reasons = {
-        "happiness": "positive outcomes, celebration, gratitude, or approval",
-        "fear": "threats, uncertainty, risk, or alarming consequences",
-        "motivation": "goals, progress, determination, or hopeful framing",
-    }
-    reason_hint = reasons.get(top_label, "the tone and word choice")
+    selected_sentences = evidence_sentences[:top_k_sentences]
 
-    bullets = "\n".join([f"- {t}" for t in top])
+    if selected_sentences:
+        bullets = "\n".join(
+            f"- {sentence}"
+            for sentence in selected_sentences
+        )
+    else:
+        bullets = "- No strong supporting sentences were detected."
 
     return (
-        f"This article suggests **{top_label}** mainly because it contains language linked to {reason_hint}.\n\n"
-        f"Key parts driving this label:\n"
-        f"{bullets}\n\n"
-        f"These sentences carry the strongest {top_label} signal according to the emotion classifier."
+        f"This article has a **{tone_label}** emotional tone, "
+        f"with a score of **{tone_score}/100**.\n\n"
+        f"Its emotional intensity is **{intensity_label}** "
+        f"with a score of **{intensity_score}/100**.\n\n"
+        f"The strongest emotional signals are: **{emotion_text}**.\n\n"
+        f"Key parts influencing this result:\n"
+        f"{bullets}"
     )

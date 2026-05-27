@@ -7,29 +7,46 @@ UA = {
                   "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
 }
 
+
 def _clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
+
 def fetch_article_text(url: str, timeout: int = 12) -> str:
-    r = requests.get(url, headers=UA, timeout=timeout)
-    r.raise_for_status()
+    response = requests.get(url, headers=UA, timeout=timeout)
+    response.raise_for_status()
 
-    soup = BeautifulSoup(r.text, "html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    for tag in soup(["script", "style", "noscript", "header", "footer", "nav", "aside"]):
+    for tag in soup([
+        "script",
+        "style",
+        "noscript",
+        "header",
+        "footer",
+        "nav",
+        "aside",
+    ]):
         tag.decompose()
 
     article = soup.find("article")
+
     if article:
         text = article.get_text(" ", strip=True)
     else:
-        ps = soup.find_all("p")
-        text = " ".join(p.get_text(" ", strip=True) for p in ps)
+        paragraphs = soup.find_all("p")
+        text = " ".join(
+            paragraph.get_text(" ", strip=True)
+            for paragraph in paragraphs
+        )
 
     text = _clean_text(text)
 
     if len(text.split()) < 80:
-        raise ValueError("Could not extract enough article text (maybe paywall or JS-rendered page).")
+        raise ValueError(
+            "Could not extract enough article text "
+            "(maybe paywall or JS-rendered page)."
+        )
 
     return text

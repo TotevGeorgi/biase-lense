@@ -1,6 +1,5 @@
 from transformers import pipeline, AutoTokenizer
 from typing import List
-import math
 
 SUM_MODEL_NAME = "facebook/bart-large-cnn"
 summarizer_pipeline = pipeline("summarization", model=SUM_MODEL_NAME)
