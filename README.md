@@ -1,4 +1,4 @@
-# 🧠 Bias Lense
+# 🧠 Bias Lens
 
 **See beyond the headline.** 
 
