@@ -1,4 +1,3 @@
-```markdown
 # 🧠 Bias Lense
 
 **See beyond the headline.** 
@@ -38,7 +37,6 @@ Bias Lense is built with a modular architecture to provide a seamless analytical
 
 Bias Lense uses a streamlined pipeline to process raw web content into structured, actionable insights.
 
-```mermaid
 flowchart TD
     A[User Inputs URL] --> B(Article Fetcher)
     B --> C{Text Cleaning & Extraction}
@@ -56,10 +54,6 @@ flowchart TD
     classDef secondary fill:#2b2b2b,stroke:#fff,stroke-width:2px,color:#fff;
     class A,H primary;
     class B,C,D,E,F,G secondary;
-
-```
-
----
 
 ## 🤖 AI & NLP Architecture
 
